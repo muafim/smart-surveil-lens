@@ -39,15 +39,26 @@ const Index = () => {
         const result = await predict(file, selectedModel);
         setCameraDetections((prev) => ({ ...prev, [camId]: result.detections }));
         setLastResult(result);
-        setLogs((prev) => [
-          {
-            timestamp: new Date(),
-            model: result.model,
-            inferenceTime: result.inference_time_sec,
-            detections: result.detections,
-          },
-          ...prev,
-        ].slice(0, 50));
+
+        const logEntry = {
+          timestamp: new Date(),
+          model: result.model,
+          inferenceTime: result.inference_time_sec,
+          detections: result.detections,
+        };
+        setLogs((prev) => [logEntry, ...prev].slice(0, 50));
+
+        // Save inference data for GPU Monitor page
+        const inferenceRecord = {
+          time: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+          model: result.model,
+          inferenceMs: Math.round(result.inference_time_sec * 1000),
+          detections: result.num_detections,
+        };
+        const stored = JSON.parse(localStorage.getItem("fallguard_inference_log") || "[]");
+        const updated = [...stored, inferenceRecord].slice(-100);
+        localStorage.setItem("fallguard_inference_log", JSON.stringify(updated));
+        window.dispatchEvent(new Event("inference-logged"));
         setApiConnected(true);
       } catch (err) {
         console.error("Prediction error:", err);
