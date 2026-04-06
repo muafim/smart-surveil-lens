@@ -5,8 +5,8 @@ import CameraFeed from "@/components/CameraFeed";
 import DetectionLog from "@/components/DetectionLog";
 import ModelSelector from "@/components/ModelSelector";
 import SettingsDialog from "@/components/SettingsDialog";
-import type { Detection, PredictResponse } from "@/lib/api";
-import { predict } from "@/lib/api";
+import type { VideoStats, PredictVideoResponse } from "@/lib/api";
+import { predictVideo, getDownloadUrl } from "@/lib/api";
 import type { LogEntry } from "@/components/DetectionLog";
 
 const DEFAULT_MODELS = ["yolov9m", "yolov11m"];
@@ -22,38 +22,41 @@ const Index = () => {
   const [apiConnected, setApiConnected] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODELS[0]);
-  const [cameraImages, setCameraImages] = useState<Record<string, string | null>>({});
-  const [cameraDetections, setCameraDetections] = useState<Record<string, Detection[]>>({});
+  const [cameraResults, setCameraResults] = useState<Record<string, string | null>>({});
+  const [cameraStats, setCameraStats] = useState<Record<string, VideoStats | null>>({});
   const [processingCameras, setProcessingCameras] = useState<Record<string, boolean>>({});
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [lastResult, setLastResult] = useState<PredictResponse | null>(null);
+  const [lastStats, setLastStats] = useState<VideoStats | null>(null);
 
-  const handleImageUpload = useCallback(
+  const handleVideoUpload = useCallback(
     async (camId: string, file: File) => {
-      const url = URL.createObjectURL(file);
-      setCameraImages((prev) => ({ ...prev, [camId]: url }));
-      setCameraDetections((prev) => ({ ...prev, [camId]: [] }));
+      setCameraResults((prev) => ({ ...prev, [camId]: null }));
+      setCameraStats((prev) => ({ ...prev, [camId]: null }));
       setProcessingCameras((prev) => ({ ...prev, [camId]: true }));
 
       try {
-        const result = await predict(file, selectedModel);
-        setCameraDetections((prev) => ({ ...prev, [camId]: result.detections }));
-        setLastResult(result);
+        const result: PredictVideoResponse = await predictVideo(file, selectedModel);
+        const videoUrl = getDownloadUrl(result.file_id);
+        setCameraResults((prev) => ({ ...prev, [camId]: videoUrl }));
+        setCameraStats((prev) => ({ ...prev, [camId]: result.stats }));
+        setLastStats(result.stats);
 
-        const logEntry = {
+        const camLabel = CAMERAS.find((c) => c.id === camId)?.label || camId;
+        const logEntry: LogEntry = {
           timestamp: new Date(),
           model: result.model,
-          inferenceTime: result.inference_time_sec,
-          detections: result.detections,
+          cameraLabel: camLabel,
+          fileId: result.file_id,
+          stats: result.stats,
         };
         setLogs((prev) => [logEntry, ...prev].slice(0, 50));
 
-        // Save inference data for GPU Monitor page
+        // Save for GPU Monitor page
         const inferenceRecord = {
           time: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
           model: result.model,
-          inferenceMs: Math.round(result.inference_time_sec * 1000),
-          detections: result.num_detections,
+          inferenceMs: result.stats.avg_yolo_ms,
+          detections: result.stats.total_fall_events,
         };
         const stored = JSON.parse(localStorage.getItem("fallguard_inference_log") || "[]");
         const updated = [...stored, inferenceRecord].slice(-100);
@@ -61,18 +64,13 @@ const Index = () => {
         window.dispatchEvent(new Event("inference-logged"));
         setApiConnected(true);
       } catch (err) {
-        console.error("Prediction error:", err);
+        console.error("Video prediction error:", err);
       } finally {
         setProcessingCameras((prev) => ({ ...prev, [camId]: false }));
       }
     },
     [selectedModel]
   );
-
-  const totalDetections = lastResult?.num_detections ?? 0;
-  const fallDetections = lastResult?.detections.filter(
-    (d) => d.label.toLowerCase().includes("fall")
-  ).length ?? 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -97,12 +95,7 @@ const Index = () => {
         </div>
 
         {/* Stats */}
-        <StatsPanel
-          inferenceTime={lastResult?.inference_time_sec ?? null}
-          totalDetections={totalDetections}
-          fallDetections={fallDetections}
-          modelName={lastResult?.model ?? selectedModel}
-        />
+        <StatsPanel stats={lastStats} modelName={selectedModel} />
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -113,10 +106,10 @@ const Index = () => {
                 key={cam.id}
                 id={cam.id}
                 label={cam.label}
-                onImageUpload={(file) => handleImageUpload(cam.id, file)}
-                detections={cameraDetections[cam.id] || []}
+                onVideoUpload={(file) => handleVideoUpload(cam.id, file)}
                 isProcessing={processingCameras[cam.id] || false}
-                imageUrl={cameraImages[cam.id] || null}
+                resultVideoUrl={cameraResults[cam.id] || null}
+                stats={cameraStats[cam.id] || null}
               />
             ))}
           </div>
