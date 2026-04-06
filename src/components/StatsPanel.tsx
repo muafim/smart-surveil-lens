@@ -1,43 +1,54 @@
-import { Clock, Eye, AlertTriangle, Cpu } from "lucide-react";
+import { Clock, AlertTriangle, Cpu, Film, Activity, PersonStanding } from "lucide-react";
+import type { VideoStats } from "@/lib/api";
 
 interface StatsPanelProps {
-  inferenceTime: number | null;
-  totalDetections: number;
-  fallDetections: number;
+  stats: VideoStats | null;
   modelName: string;
 }
 
-const StatsPanel = ({ inferenceTime, totalDetections, fallDetections, modelName }: StatsPanelProps) => {
-  const stats = [
+const StatsPanel = ({ stats, modelName }: StatsPanelProps) => {
+  const items = [
     {
       icon: Clock,
-      label: "Inference Time",
-      value: inferenceTime !== null ? `${(inferenceTime * 1000).toFixed(0)}ms` : "—",
+      label: "Avg Frame Time",
+      value: stats ? `${stats.avg_total_frame_ms}ms` : "—",
       color: "text-info",
     },
     {
-      icon: Eye,
-      label: "Detections",
-      value: totalDetections.toString(),
+      icon: Cpu,
+      label: "Avg YOLO",
+      value: stats ? `${stats.avg_yolo_ms}ms` : "—",
       color: "text-primary",
     },
     {
-      icon: AlertTriangle,
-      label: "Fall Alerts",
-      value: fallDetections.toString(),
-      color: fallDetections > 0 ? "text-destructive" : "text-success",
+      icon: Activity,
+      label: "Avg Pose",
+      value: stats ? `${stats.avg_pose_ms}ms` : "—",
+      color: "text-warning",
     },
     {
-      icon: Cpu,
-      label: "Model",
-      value: modelName || "—",
-      color: "text-warning",
+      icon: Film,
+      label: "Processing FPS",
+      value: stats ? `${stats.processing_fps}` : "—",
+      color: "text-info",
+    },
+    {
+      icon: AlertTriangle,
+      label: "Fall Events",
+      value: stats ? stats.total_fall_events.toString() : "—",
+      color: stats && stats.total_fall_events > 0 ? "text-destructive" : "text-success",
+    },
+    {
+      icon: PersonStanding,
+      label: "Max Falls",
+      value: stats ? stats.max_fall_count.toString() : "—",
+      color: stats && stats.max_fall_count > 0 ? "text-destructive" : "text-success",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      {stats.map((stat) => (
+    <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+      {items.map((stat) => (
         <div key={stat.label} className="stat-card flex items-center gap-3">
           <div className={`p-2 rounded-md bg-muted ${stat.color}`}>
             <stat.icon className="w-4 h-4" />
