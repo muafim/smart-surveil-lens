@@ -39,8 +39,11 @@ const Index = () => {
 
       try {
         const result: PredictVideoResponse = await predictVideo(file, selectedModel);
-        const videoUrl = getDownloadUrl(result.file_id);
-        setCameraResults((prev) => ({ ...prev, [camId]: videoUrl }));
+        // Fetch result video as blob to avoid CORS issues with <video> tag
+        const downloadUrl = getDownloadUrl(result.file_id);
+        const videoBlob = await fetch(downloadUrl).then((r) => r.blob());
+        const videoBlobUrl = URL.createObjectURL(videoBlob);
+        setCameraResults((prev) => ({ ...prev, [camId]: videoBlobUrl }));
         setCameraStats((prev) => ({ ...prev, [camId]: result.stats }));
         setLastStats(result.stats);
 
