@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import { Upload, Video, Download, Play } from "lucide-react";
+import { useRef, useState, useMemo } from "react";
+import { Upload, Video, Download, ArrowLeftRight } from "lucide-react";
 import type { VideoStats } from "@/lib/api";
 
 interface CameraFeedProps {
@@ -8,12 +8,19 @@ interface CameraFeedProps {
   onVideoUpload: (file: File) => void;
   isProcessing: boolean;
   resultVideoUrl: string | null;
+  originalVideoUrl: string | null;
   stats: VideoStats | null;
   progress?: string;
 }
 
-const CameraFeed = ({ id, label, onVideoUpload, isProcessing, resultVideoUrl, stats, progress }: CameraFeedProps) => {
+const CameraFeed = ({ id, label, onVideoUpload, isProcessing, resultVideoUrl, originalVideoUrl, stats, progress }: CameraFeedProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showResult, setShowResult] = useState(true);
+
+  const activeUrl = useMemo(() => {
+    if (resultVideoUrl && showResult) return resultVideoUrl;
+    return originalVideoUrl;
+  }, [resultVideoUrl, originalVideoUrl, showResult]);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -46,15 +53,34 @@ const CameraFeed = ({ id, label, onVideoUpload, isProcessing, resultVideoUrl, st
         </div>
       </div>
 
+      {/* Toggle tabs when result is available */}
+      {resultVideoUrl && originalVideoUrl && (
+        <div className="flex border-b border-border">
+          <button
+            onClick={() => setShowResult(true)}
+            className={`flex-1 text-[10px] font-medium py-1.5 transition-colors ${showResult ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            Hasil Deteksi
+          </button>
+          <button
+            onClick={() => setShowResult(false)}
+            className={`flex-1 text-[10px] font-medium py-1.5 transition-colors ${!showResult ? "bg-primary/10 text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            Video Asli
+          </button>
+        </div>
+      )}
+
       <div
         className="relative flex-1 min-h-[240px] bg-background/50 cursor-pointer"
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
-        onClick={() => !resultVideoUrl && !isProcessing && fileInputRef.current?.click()}
+        onClick={() => !activeUrl && !isProcessing && fileInputRef.current?.click()}
       >
-        {resultVideoUrl ? (
+        {activeUrl ? (
           <video
-            src={resultVideoUrl}
+            key={activeUrl}
+            src={activeUrl}
             controls
             className="absolute inset-0 w-full h-full object-contain bg-black"
           />
@@ -91,18 +117,20 @@ const CameraFeed = ({ id, label, onVideoUpload, isProcessing, resultVideoUrl, st
         </div>
       )}
 
-      {/* Action buttons when result is ready */}
-      {resultVideoUrl && (
+      {/* Action buttons */}
+      {(resultVideoUrl || originalVideoUrl) && (
         <div className="px-3 py-2 border-t border-border flex items-center gap-2">
-          <a
-            href={resultVideoUrl}
-            download
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Download className="w-3 h-3" />
-            Download
-          </a>
+          {resultVideoUrl && (
+            <a
+              href={resultVideoUrl}
+              download
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Download className="w-3 h-3" />
+              Download
+            </a>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();

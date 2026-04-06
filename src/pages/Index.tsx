@@ -23,6 +23,7 @@ const Index = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODELS[0]);
   const [cameraResults, setCameraResults] = useState<Record<string, string | null>>({});
+  const [cameraOriginals, setCameraOriginals] = useState<Record<string, string | null>>({});
   const [cameraStats, setCameraStats] = useState<Record<string, VideoStats | null>>({});
   const [processingCameras, setProcessingCameras] = useState<Record<string, boolean>>({});
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -30,6 +31,8 @@ const Index = () => {
 
   const handleVideoUpload = useCallback(
     async (camId: string, file: File) => {
+      const originalUrl = URL.createObjectURL(file);
+      setCameraOriginals((prev) => ({ ...prev, [camId]: originalUrl }));
       setCameraResults((prev) => ({ ...prev, [camId]: null }));
       setCameraStats((prev) => ({ ...prev, [camId]: null }));
       setProcessingCameras((prev) => ({ ...prev, [camId]: true }));
@@ -109,6 +112,7 @@ const Index = () => {
                 onVideoUpload={(file) => handleVideoUpload(cam.id, file)}
                 isProcessing={processingCameras[cam.id] || false}
                 resultVideoUrl={cameraResults[cam.id] || null}
+                originalVideoUrl={cameraOriginals[cam.id] || null}
                 stats={cameraStats[cam.id] || null}
               />
             ))}
