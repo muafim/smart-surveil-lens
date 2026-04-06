@@ -1,76 +1,70 @@
-import { AlertTriangle, User, Eye } from "lucide-react";
-import type { Detection } from "@/lib/api";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { FileVideo, AlertTriangle, Clock, Film } from "lucide-react";
+import type { VideoStats } from "@/lib/api";
 
-interface LogEntry {
+export interface LogEntry {
   timestamp: Date;
   model: string;
-  inferenceTime: number;
-  detections: Detection[];
+  cameraLabel: string;
+  fileId: string;
+  stats: VideoStats;
 }
 
 interface DetectionLogProps {
   logs: LogEntry[];
 }
 
-function getIcon(label: string) {
-  const l = label.toLowerCase();
-  if (l.includes("fall")) return AlertTriangle;
-  if (l === "person") return User;
-  return Eye;
-}
-
 const DetectionLog = ({ logs }: DetectionLogProps) => {
   return (
-    <div className="bg-card border border-border rounded-lg flex flex-col h-full">
-      <div className="px-4 py-3 border-b border-border">
-        <h3 className="text-sm font-semibold flex items-center gap-2">
-          <Eye className="w-4 h-4 text-primary" />
-          Detection Log
-        </h3>
+    <div className="camera-grid-item flex flex-col h-full">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+        <div className="flex items-center gap-2">
+          <FileVideo className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs font-medium">Processing Log</span>
+        </div>
+        <span className="text-[10px] font-mono text-muted-foreground">{logs.length} entries</span>
       </div>
-      <div className="flex-1 overflow-y-auto max-h-[400px]">
+
+      <ScrollArea className="flex-1 min-h-[200px] max-h-[500px]">
         {logs.length === 0 ? (
-          <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-            No detections yet
+          <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+            <FileVideo className="w-6 h-6 mb-2" />
+            <p className="text-xs">Belum ada video yang diproses</p>
           </div>
         ) : (
           <div className="divide-y divide-border">
             {logs.map((log, i) => (
-              <div key={i} className="px-4 py-3 hover:bg-muted/30 transition-colors">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-mono text-muted-foreground">
-                    {log.timestamp.toLocaleTimeString()}
-                  </span>
-                  <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                    {log.model} · {(log.inferenceTime * 1000).toFixed(0)}ms
+              <div key={i} className="px-3 py-2.5 hover:bg-muted/30 transition-colors">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-foreground">{log.cameraLabel}</span>
+                  <span className="text-[10px] font-mono text-muted-foreground">
+                    {log.timestamp.toLocaleTimeString("id-ID")}
                   </span>
                 </div>
-                <div className="space-y-1">
-                  {log.detections.map((det, j) => {
-                    const Icon = getIcon(det.label);
-                    const isFall = det.label.toLowerCase().includes("fall");
-                    return (
-                      <div
-                        key={j}
-                        className={`flex items-center gap-2 text-xs rounded px-2 py-1 ${
-                          isFall ? "bg-destructive/10 text-destructive" : "bg-muted/50 text-foreground"
-                        }`}
-                      >
-                        <Icon className="w-3 h-3 flex-shrink-0" />
-                        <span className="font-medium">{det.label}</span>
-                        <span className="font-mono ml-auto">{(det.confidence * 100).toFixed(1)}%</span>
-                      </div>
-                    );
-                  })}
+                <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground">
+                  <span className="text-primary">{log.model}</span>
+                  <span className="flex items-center gap-1">
+                    <Film className="w-3 h-3" />
+                    {log.stats.processed_frames}/{log.stats.total_frames} frames
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {log.stats.avg_yolo_ms}ms
+                  </span>
+                  {log.stats.total_fall_events > 0 && (
+                    <span className="flex items-center gap-1 text-destructive font-semibold">
+                      <AlertTriangle className="w-3 h-3" />
+                      {log.stats.total_fall_events} falls
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </ScrollArea>
     </div>
   );
 };
 
 export default DetectionLog;
-export type { LogEntry };
