@@ -58,6 +58,7 @@ export async function predictVideo(
     skip_frames?: number;
     fall_confirm_seconds?: number;
     recover_seconds?: number;
+    draw_bbox?: boolean;
   }
 ): Promise<PredictVideoResponse> {
   const formData = new FormData();
@@ -67,6 +68,7 @@ export async function predictVideo(
   if (options?.skip_frames !== undefined) formData.append("skip_frames", options.skip_frames.toString());
   if (options?.fall_confirm_seconds !== undefined) formData.append("fall_confirm_seconds", options.fall_confirm_seconds.toString());
   if (options?.recover_seconds !== undefined) formData.append("recover_seconds", options.recover_seconds.toString());
+  if (options?.draw_bbox !== undefined) formData.append("draw_bbox", options.draw_bbox.toString());
 
   const res = await fetch(`${getApiUrl()}/predict-video`, {
     method: "POST",
