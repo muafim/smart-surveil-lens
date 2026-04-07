@@ -5,9 +5,12 @@ import CameraFeed from "@/components/CameraFeed";
 import DetectionLog from "@/components/DetectionLog";
 import ModelSelector from "@/components/ModelSelector";
 import SettingsDialog from "@/components/SettingsDialog";
+import FallAlert from "@/components/FallAlert";
 import type { VideoStats, PredictVideoResponse } from "@/lib/api";
 import { predictVideo, getDownloadUrl } from "@/lib/api";
 import type { LogEntry } from "@/components/DetectionLog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const DEFAULT_MODELS = ["yolov9m", "yolov11m"];
 
@@ -17,6 +20,12 @@ const CAMERAS = [
   { id: "cam3", label: "Camera 3 — Living Room" },
   { id: "cam4", label: "Camera 4 — Staircase" },
 ];
+
+interface FallAlertData {
+  id: string;
+  fallEvents: number;
+  cameraLabel: string;
+}
 
 const Index = () => {
   const [apiConnected, setApiConnected] = useState(false);
@@ -28,6 +37,8 @@ const Index = () => {
   const [processingCameras, setProcessingCameras] = useState<Record<string, boolean>>({});
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [lastStats, setLastStats] = useState<VideoStats | null>(null);
+  const [useBoundingBox, setUseBoundingBox] = useState(true);
+  const [fallAlerts, setFallAlerts] = useState<FallAlertData[]>([]);
 
   const handleVideoUpload = useCallback(
     async (camId: string, file: File) => {
@@ -38,8 +49,9 @@ const Index = () => {
       setProcessingCameras((prev) => ({ ...prev, [camId]: true }));
 
       try {
-        const result: PredictVideoResponse = await predictVideo(file, selectedModel);
-        // Fetch result video as blob to avoid CORS issues with <video> tag
+        const result: PredictVideoResponse = await predictVideo(file, selectedModel, {
+          draw_bbox: useBoundingBox,
+        });
         const downloadUrl = getDownloadUrl(result.file_id);
         const videoBlob = await fetch(downloadUrl).then((r) => r.blob());
         const videoBlobUrl = URL.createObjectURL(videoBlob);
@@ -48,6 +60,19 @@ const Index = () => {
         setLastStats(result.stats);
 
         const camLabel = CAMERAS.find((c) => c.id === camId)?.label || camId;
+
+        // Trigger fall alert
+        if (result.stats.total_fall_events > 0) {
+          setFallAlerts((prev) => [
+            ...prev,
+            {
+              id: `${camId}-${Date.now()}`,
+              fallEvents: result.stats.total_fall_events,
+              cameraLabel: camLabel,
+            },
+          ]);
+        }
+
         const logEntry: LogEntry = {
           timestamp: new Date(),
           model: result.model,
@@ -57,7 +82,6 @@ const Index = () => {
         };
         setLogs((prev) => [logEntry, ...prev].slice(0, 50));
 
-        // Save for GPU Monitor page
         const inferenceRecord = {
           time: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
           model: result.model,
@@ -75,21 +99,48 @@ const Index = () => {
         setProcessingCameras((prev) => ({ ...prev, [camId]: false }));
       }
     },
-    [selectedModel]
+    [selectedModel, useBoundingBox]
   );
+
+  const dismissAlert = useCallback((alertId: string) => {
+    setFallAlerts((prev) => prev.filter((a) => a.id !== alertId));
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header apiConnected={apiConnected} onSettingsClick={() => setSettingsOpen(true)} />
 
+      {/* Fall Alerts */}
+      {fallAlerts.map((alert, i) => (
+        <div key={alert.id} style={{ top: `${64 + i * 100}px` }} className="fixed right-4 z-50">
+          <FallAlert
+            fallEvents={alert.fallEvents}
+            cameraLabel={alert.cameraLabel}
+            onDismiss={() => dismissAlert(alert.id)}
+          />
+        </div>
+      ))}
+
       <main className="flex-1 p-4 lg:p-6 space-y-4">
         {/* Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <ModelSelector
-            models={DEFAULT_MODELS}
-            selected={selectedModel}
-            onChange={setSelectedModel}
-          />
+          <div className="flex items-center gap-4">
+            <ModelSelector
+              models={DEFAULT_MODELS}
+              selected={selectedModel}
+              onChange={setSelectedModel}
+            />
+            <div className="flex items-center gap-2">
+              <Switch
+                id="bbox-toggle"
+                checked={useBoundingBox}
+                onCheckedChange={setUseBoundingBox}
+              />
+              <Label htmlFor="bbox-toggle" className="text-xs font-medium cursor-pointer">
+                Bounding Box
+              </Label>
+            </div>
+          </div>
           <div className="text-xs text-muted-foreground font-mono">
             {new Date().toLocaleDateString("id-ID", {
               weekday: "long",
@@ -105,7 +156,6 @@ const Index = () => {
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Camera Grid */}
           <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
             {CAMERAS.map((cam) => (
               <CameraFeed
@@ -120,8 +170,6 @@ const Index = () => {
               />
             ))}
           </div>
-
-          {/* Detection Log */}
           <div className="lg:col-span-1">
             <DetectionLog logs={logs} />
           </div>
