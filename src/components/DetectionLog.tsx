@@ -1,5 +1,13 @@
+import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileVideo, AlertTriangle, Clock, Film } from "lucide-react";
+import { FileVideo, AlertTriangle, Clock, Film, Activity, Gauge, Users, Layers } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import type { VideoStats } from "@/lib/api";
 
 export interface LogEntry {
@@ -14,7 +22,43 @@ interface DetectionLogProps {
   logs: LogEntry[];
 }
 
+const StatRow = ({
+  icon: Icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  accent?: "primary" | "destructive" | "default";
+}) => (
+  <div className="flex items-center justify-between py-2 px-3 rounded-md bg-muted/30 border border-border">
+    <div className="flex items-center gap-2">
+      <Icon
+        className={`w-3.5 h-3.5 ${
+          accent === "primary"
+            ? "text-primary"
+            : accent === "destructive"
+            ? "text-destructive"
+            : "text-muted-foreground"
+        }`}
+      />
+      <span className="text-xs text-muted-foreground">{label}</span>
+    </div>
+    <span
+      className={`text-xs font-mono font-semibold ${
+        accent === "destructive" ? "text-destructive" : "text-foreground"
+      }`}
+    >
+      {value}
+    </span>
+  </div>
+);
+
 const DetectionLog = ({ logs }: DetectionLogProps) => {
+  const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
+
   return (
     <div className="camera-grid-item flex flex-col h-full">
       <div className="flex items-center justify-between px-3 py-2 border-b border-border">
@@ -34,7 +78,11 @@ const DetectionLog = ({ logs }: DetectionLogProps) => {
         ) : (
           <div className="divide-y divide-border">
             {logs.map((log, i) => (
-              <div key={i} className="px-3 py-2.5 hover:bg-muted/30 transition-colors">
+              <button
+                key={i}
+                onClick={() => setSelectedLog(log)}
+                className="w-full text-left px-3 py-2.5 hover:bg-muted/40 transition-colors focus:outline-none focus:bg-muted/40"
+              >
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-foreground">{log.cameraLabel}</span>
                   <span className="text-[10px] font-mono text-muted-foreground">
@@ -58,11 +106,81 @@ const DetectionLog = ({ logs }: DetectionLogProps) => {
                     </span>
                   )}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}
       </ScrollArea>
+
+      <Dialog open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileVideo className="w-4 h-4 text-primary" />
+              {selectedLog?.cameraLabel}
+            </DialogTitle>
+            <DialogDescription className="font-mono text-xs">
+              {selectedLog?.model} · {selectedLog?.timestamp.toLocaleString("id-ID")}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedLog && (
+            <div className="space-y-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mt-2">
+                Inference Pipeline
+              </div>
+              <StatRow
+                icon={Activity}
+                label="YOLO Inference"
+                value={`${selectedLog.stats.avg_yolo_ms} ms`}
+                accent="primary"
+              />
+              <StatRow
+                icon={Activity}
+                label="Pose Estimation"
+                value={`${selectedLog.stats.avg_pose_ms} ms`}
+                accent="primary"
+              />
+              <StatRow
+                icon={Layers}
+                label="Pipeline Total / Frame"
+                value={`${selectedLog.stats.avg_total_frame_ms} ms`}
+              />
+
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mt-3">
+                Performance
+              </div>
+              <StatRow
+                icon={Gauge}
+                label="Processing FPS"
+                value={selectedLog.stats.processing_fps}
+                accent="primary"
+              />
+              <StatRow
+                icon={Film}
+                label="Frames Processed"
+                value={`${selectedLog.stats.processed_frames} / ${selectedLog.stats.total_frames}`}
+              />
+
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mt-3">
+                Detection Results
+              </div>
+              <StatRow
+                icon={AlertTriangle}
+                label="Total Fall Events"
+                value={selectedLog.stats.total_fall_events}
+                accent={selectedLog.stats.total_fall_events > 0 ? "destructive" : "default"}
+              />
+              <StatRow
+                icon={Users}
+                label="Max Simultaneous Falls"
+                value={selectedLog.stats.max_fall_count}
+                accent={selectedLog.stats.max_fall_count > 0 ? "destructive" : "default"}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
