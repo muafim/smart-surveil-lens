@@ -15,10 +15,10 @@ import { Label } from "@/components/ui/label";
 const DEFAULT_MODELS = ["yolov9m", "yolov11m"];
 
 const CAMERAS = [
-  { id: "cam1", label: "Camera 1 — Front Entrance" },
-  { id: "cam2", label: "Camera 2 — Hallway" },
-  { id: "cam3", label: "Camera 3 — Living Room" },
-  { id: "cam4", label: "Camera 4 — Staircase" },
+  { id: "cam1", label: "Room 1" },
+  { id: "cam2", label: "Room 2" },
+  { id: "cam3", label: "Room 3" },
+  { id: "cam4", label: "Room 4" },
 ];
 
 interface FallAlertData {
