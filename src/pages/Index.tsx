@@ -5,7 +5,7 @@ import CameraFeed from "@/components/CameraFeed";
 import DetectionLog from "@/components/DetectionLog";
 import ModelSelector from "@/components/ModelSelector";
 import SettingsDialog from "@/components/SettingsDialog";
-import FallAlert from "@/components/FallAlert";
+import EmergencyAlert from "@/components/EmergencyAlert";
 import type { VideoStats, PredictVideoResponse } from "@/lib/api";
 import { predictVideo, getDownloadUrl } from "@/lib/api";
 import type { LogEntry } from "@/components/DetectionLog";
@@ -13,40 +13,35 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 const DEFAULT_MODELS = ["yolov9m", "yolov11m"];
+const CAMERA_ID = "main";
+const CAMERA_LABEL = "Camera Feed";
 
-const CAMERAS = [
-  { id: "cam1", label: "Room 1" },
-  { id: "cam2", label: "Room 2" },
-  { id: "cam3", label: "Room 3" },
-  { id: "cam4", label: "Room 4" },
-];
-
-interface FallAlertData {
+interface AlertData {
   id: string;
   fallEvents: number;
   cameraLabel: string;
+  timestamp: Date;
 }
 
 const Index = () => {
   const [apiConnected, setApiConnected] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODELS[0]);
-  const [cameraResults, setCameraResults] = useState<Record<string, string | null>>({});
-  const [cameraOriginals, setCameraOriginals] = useState<Record<string, string | null>>({});
-  const [cameraStats, setCameraStats] = useState<Record<string, VideoStats | null>>({});
-  const [processingCameras, setProcessingCameras] = useState<Record<string, boolean>>({});
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [originalUrl, setOriginalUrl] = useState<string | null>(null);
+  const [stats, setStats] = useState<VideoStats | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [lastStats, setLastStats] = useState<VideoStats | null>(null);
   const [useBoundingBox, setUseBoundingBox] = useState(true);
-  const [fallAlerts, setFallAlerts] = useState<FallAlertData[]>([]);
+  const [activeAlert, setActiveAlert] = useState<AlertData | null>(null);
 
   const handleVideoUpload = useCallback(
-    async (camId: string, file: File) => {
-      const originalUrl = URL.createObjectURL(file);
-      setCameraOriginals((prev) => ({ ...prev, [camId]: originalUrl }));
-      setCameraResults((prev) => ({ ...prev, [camId]: null }));
-      setCameraStats((prev) => ({ ...prev, [camId]: null }));
-      setProcessingCameras((prev) => ({ ...prev, [camId]: true }));
+    async (file: File) => {
+      const oUrl = URL.createObjectURL(file);
+      setOriginalUrl(oUrl);
+      setResultUrl(null);
+      setStats(null);
+      setIsProcessing(true);
 
       try {
         const result: PredictVideoResponse = await predictVideo(file, selectedModel, {
@@ -55,35 +50,31 @@ const Index = () => {
         const downloadUrl = getDownloadUrl(result.file_id);
         const videoBlob = await fetch(downloadUrl).then((r) => r.blob());
         const videoBlobUrl = URL.createObjectURL(videoBlob);
-        setCameraResults((prev) => ({ ...prev, [camId]: videoBlobUrl }));
-        setCameraStats((prev) => ({ ...prev, [camId]: result.stats }));
-        setLastStats(result.stats);
+        setResultUrl(videoBlobUrl);
+        setStats(result.stats);
 
-        const camLabel = CAMERAS.find((c) => c.id === camId)?.label || camId;
+        const detectedAt = new Date();
 
-        // Trigger fall alert
         if (result.stats.total_fall_events > 0) {
-          setFallAlerts((prev) => [
-            ...prev,
-            {
-              id: `${camId}-${Date.now()}`,
-              fallEvents: result.stats.total_fall_events,
-              cameraLabel: camLabel,
-            },
-          ]);
+          setActiveAlert({
+            id: `${CAMERA_ID}-${Date.now()}`,
+            fallEvents: result.stats.total_fall_events,
+            cameraLabel: CAMERA_LABEL,
+            timestamp: detectedAt,
+          });
         }
 
         const logEntry: LogEntry = {
-          timestamp: new Date(),
+          timestamp: detectedAt,
           model: result.model,
-          cameraLabel: camLabel,
+          cameraLabel: CAMERA_LABEL,
           fileId: result.file_id,
           stats: result.stats,
         };
         setLogs((prev) => [logEntry, ...prev].slice(0, 50));
 
         const inferenceRecord = {
-          time: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+          time: detectedAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
           model: result.model,
           inferenceMs: result.stats.avg_yolo_ms,
           detections: result.stats.total_fall_events,
@@ -96,33 +87,26 @@ const Index = () => {
       } catch (err) {
         console.error("Video prediction error:", err);
       } finally {
-        setProcessingCameras((prev) => ({ ...prev, [camId]: false }));
+        setIsProcessing(false);
       }
     },
     [selectedModel, useBoundingBox]
   );
 
-  const dismissAlert = useCallback((alertId: string) => {
-    setFallAlerts((prev) => prev.filter((a) => a.id !== alertId));
-  }, []);
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header apiConnected={apiConnected} onSettingsClick={() => setSettingsOpen(true)} />
 
-      {/* Fall Alerts */}
-      {fallAlerts.map((alert, i) => (
-        <div key={alert.id} style={{ top: `${64 + i * 100}px` }} className="fixed right-4 z-50">
-          <FallAlert
-            fallEvents={alert.fallEvents}
-            cameraLabel={alert.cameraLabel}
-            onDismiss={() => dismissAlert(alert.id)}
-          />
-        </div>
-      ))}
+      {activeAlert && (
+        <EmergencyAlert
+          fallEvents={activeAlert.fallEvents}
+          cameraLabel={activeAlert.cameraLabel}
+          timestamp={activeAlert.timestamp}
+          onDismiss={() => setActiveAlert(null)}
+        />
+      )}
 
       <main className="flex-1 p-4 lg:p-6 space-y-4">
-        {/* Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <ModelSelector
@@ -151,24 +135,19 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Stats */}
-        <StatsPanel stats={lastStats} modelName={selectedModel} />
+        <StatsPanel stats={stats} modelName={selectedModel} />
 
-        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-            {CAMERAS.map((cam) => (
-              <CameraFeed
-                key={cam.id}
-                id={cam.id}
-                label={cam.label}
-                onVideoUpload={(file) => handleVideoUpload(cam.id, file)}
-                isProcessing={processingCameras[cam.id] || false}
-                resultVideoUrl={cameraResults[cam.id] || null}
-                originalVideoUrl={cameraOriginals[cam.id] || null}
-                stats={cameraStats[cam.id] || null}
-              />
-            ))}
+          <div className="lg:col-span-2">
+            <CameraFeed
+              id={CAMERA_ID}
+              label={CAMERA_LABEL}
+              onVideoUpload={handleVideoUpload}
+              isProcessing={isProcessing}
+              resultVideoUrl={resultUrl}
+              originalVideoUrl={originalUrl}
+              stats={stats}
+            />
           </div>
           <div className="lg:col-span-1">
             <DetectionLog logs={logs} />

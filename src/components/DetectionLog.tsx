@@ -84,12 +84,26 @@ const DetectionLog = ({ logs }: DetectionLogProps) => {
                 className="w-full text-left px-3 py-2.5 hover:bg-muted/40 transition-colors focus:outline-none focus:bg-muted/40"
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-foreground">{log.cameraLabel}</span>
+                  <span className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                    {log.cameraLabel}
+                    {log.stats.total_fall_events > 0 && (
+                      <span className="px-1.5 py-0.5 rounded bg-destructive/15 text-destructive text-[9px] font-bold uppercase">
+                        Fall
+                      </span>
+                    )}
+                  </span>
                   <span className="text-[10px] font-mono text-muted-foreground">
-                    {log.timestamp.toLocaleTimeString("id-ID")}
+                    {log.timestamp.toLocaleString("id-ID", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-mono text-muted-foreground">
                   <span className="text-primary">{log.model}</span>
                   <span className="flex items-center gap-1">
                     <Film className="w-3 h-3" />
