@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, BarChart3, Camera, ClipboardList, ExternalLink, ShieldAlert, Sparkles, Cpu } from "lucide-react";
+import { ArrowRight, BarChart3, Camera, ClipboardList, ExternalLink, ShieldAlert, Sparkles } from "lucide-react";
 import logo from "@/assets/fallguard-logo.png";
 
 const FEEDBACK_URL = "https://bit.ly/KuesionerFallGuard";
@@ -92,20 +92,8 @@ const Dashboard = () => {
               <div>
                 <h3 className="font-semibold text-sm text-foreground">Live Monitoring</h3>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Pengguna dapat mengunggah video pada salah satu dari empat slot kamera CCTV. Sistem akan memproses
-                  video dan menampilkan hasil deteksi jatuh beserta statistik inferensi (YOLO &amp; Pose).
-                </p>
-              </div>
-            </li>
-            <li className="flex gap-4 p-4 rounded-lg bg-card/50 border border-border">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-sm font-bold text-primary">
-                2
-              </div>
-              <div>
-                <h3 className="font-semibold text-sm text-foreground">GPU Monitor</h3>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Halaman pemantauan penggunaan GPU dan memori untuk melihat performa hardware selama proses inferensi
-                  model deteksi jatuh berlangsung.
+                  Pengguna dapat mengunggah video CCTV. Sistem akan memproses video dan menampilkan hasil deteksi jatuh
+                  beserta statistik inferensi (YOLO &amp; Pose), serta menampilkan alert penanganan jika terdeteksi jatuh.
                 </p>
               </div>
             </li>
@@ -113,15 +101,7 @@ const Dashboard = () => {
         </section>
 
         {/* Navigation buttons */}
-        <section className="mt-10 flex flex-col sm:flex-row items-stretch justify-between gap-3 max-w-3xl mx-auto">
-          <button
-            onClick={() => navigate("/gpu-monitor")}
-            className="group flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-card border border-border hover:border-primary/50 hover:bg-card/80 transition-all"
-          >
-            <Cpu className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold">GPU Monitor</span>
-          </button>
-
+        <section className="mt-10 flex justify-center max-w-3xl mx-auto">
           <button
             onClick={() => navigate("/monitoring")}
             className="group flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"

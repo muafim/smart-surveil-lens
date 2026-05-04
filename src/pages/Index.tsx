@@ -3,7 +3,6 @@ import Header from "@/components/Header";
 import StatsPanel from "@/components/StatsPanel";
 import CameraFeed from "@/components/CameraFeed";
 import DetectionLog from "@/components/DetectionLog";
-import ModelSelector from "@/components/ModelSelector";
 import SettingsDialog from "@/components/SettingsDialog";
 import EmergencyAlert from "@/components/EmergencyAlert";
 import type { VideoStats, PredictVideoResponse } from "@/lib/api";
@@ -12,7 +11,7 @@ import type { LogEntry } from "@/components/DetectionLog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-const DEFAULT_MODELS = ["yolov9m", "yolov11m"];
+const MODEL_NAME = "best";
 const CAMERA_ID = "main";
 const CAMERA_LABEL = "Camera Feed";
 
@@ -26,7 +25,6 @@ interface AlertData {
 const Index = () => {
   const [apiConnected, setApiConnected] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODELS[0]);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [originalUrl, setOriginalUrl] = useState<string | null>(null);
   const [stats, setStats] = useState<VideoStats | null>(null);
@@ -44,7 +42,7 @@ const Index = () => {
       setIsProcessing(true);
 
       try {
-        const result: PredictVideoResponse = await predictVideo(file, selectedModel, {
+        const result: PredictVideoResponse = await predictVideo(file, MODEL_NAME, {
           draw_bbox: useBoundingBox,
         });
         const downloadUrl = getDownloadUrl(result.file_id);
@@ -90,7 +88,7 @@ const Index = () => {
         setIsProcessing(false);
       }
     },
-    [selectedModel, useBoundingBox]
+    [useBoundingBox]
   );
 
   return (
@@ -108,22 +106,15 @@ const Index = () => {
 
       <main className="flex-1 p-4 lg:p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
-            <ModelSelector
-              models={DEFAULT_MODELS}
-              selected={selectedModel}
-              onChange={setSelectedModel}
+          <div className="flex items-center gap-2">
+            <Switch
+              id="bbox-toggle"
+              checked={useBoundingBox}
+              onCheckedChange={setUseBoundingBox}
             />
-            <div className="flex items-center gap-2">
-              <Switch
-                id="bbox-toggle"
-                checked={useBoundingBox}
-                onCheckedChange={setUseBoundingBox}
-              />
-              <Label htmlFor="bbox-toggle" className="text-xs font-medium cursor-pointer">
-                Bounding Box
-              </Label>
-            </div>
+            <Label htmlFor="bbox-toggle" className="text-xs font-medium cursor-pointer">
+              Bounding Box
+            </Label>
           </div>
           <div className="text-xs text-muted-foreground font-mono">
             {new Date().toLocaleDateString("id-ID", {
@@ -135,7 +126,7 @@ const Index = () => {
           </div>
         </div>
 
-        <StatsPanel stats={stats} modelName={selectedModel} />
+        <StatsPanel stats={stats} modelName={MODEL_NAME} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">

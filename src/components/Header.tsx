@@ -1,4 +1,4 @@
-import { Activity, Settings, Wifi, WifiOff, BarChart3, Home } from "lucide-react";
+import { Activity, Settings, Wifi, WifiOff, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
@@ -42,13 +42,6 @@ const Header = ({ apiConnected, onSettingsClick }: HeaderProps) => {
             {apiConnected ? "Connected" : "Disconnected"}
           </span>
         </div>
-        <button
-          onClick={() => navigate("/gpu-monitor")}
-          className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-          title="GPU Monitor"
-        >
-          <BarChart3 className="w-4 h-4" />
-        </button>
         <button
           onClick={onSettingsClick}
           className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
