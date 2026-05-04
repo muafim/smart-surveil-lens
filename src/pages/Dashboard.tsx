@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, BarChart3, Camera, ShieldAlert, Sparkles } from "lucide-react";
+import { ArrowRight, BarChart3, Camera, ClipboardList, ExternalLink, ShieldAlert, Sparkles } from "lucide-react";
 import logo from "@/assets/fallguard-logo.png";
 
 const FEEDBACK_URL = "https://bit.ly/KuesionerFallGuard";
