@@ -30,7 +30,6 @@ const Index = () => {
   const [stats, setStats] = useState<VideoStats | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [useBoundingBox, setUseBoundingBox] = useState(true);
   const [activeAlert, setActiveAlert] = useState<AlertData | null>(null);
 
   const handleVideoUpload = useCallback(
@@ -42,9 +41,7 @@ const Index = () => {
       setIsProcessing(true);
 
       try {
-        const result: PredictVideoResponse = await predictVideo(file, MODEL_NAME, {
-          draw_bbox: useBoundingBox,
-        });
+        const result: PredictVideoResponse = await predictVideo(file, MODEL_NAME);
         const downloadUrl = getDownloadUrl(result.file_id);
         const videoBlob = await fetch(downloadUrl).then((r) => r.blob());
         const videoBlobUrl = URL.createObjectURL(videoBlob);
