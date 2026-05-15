@@ -102,17 +102,7 @@ const Index = () => {
       )}
 
       <main className="flex-1 p-4 lg:p-6 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Switch
-              id="bbox-toggle"
-              checked={useBoundingBox}
-              onCheckedChange={setUseBoundingBox}
-            />
-            <Label htmlFor="bbox-toggle" className="text-xs font-medium cursor-pointer">
-              Bounding Box
-            </Label>
-          </div>
+        <div className="flex flex-wrap items-center justify-end gap-3">
           <div className="text-xs text-muted-foreground font-mono">
             {new Date().toLocaleDateString("id-ID", {
               weekday: "long",
