@@ -30,7 +30,6 @@ const Index = () => {
   const [stats, setStats] = useState<VideoStats | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [useBoundingBox, setUseBoundingBox] = useState(true);
   const [activeAlert, setActiveAlert] = useState<AlertData | null>(null);
 
   const handleVideoUpload = useCallback(
@@ -42,9 +41,7 @@ const Index = () => {
       setIsProcessing(true);
 
       try {
-        const result: PredictVideoResponse = await predictVideo(file, MODEL_NAME, {
-          draw_bbox: useBoundingBox,
-        });
+        const result: PredictVideoResponse = await predictVideo(file, MODEL_NAME);
         const downloadUrl = getDownloadUrl(result.file_id);
         const videoBlob = await fetch(downloadUrl).then((r) => r.blob());
         const videoBlobUrl = URL.createObjectURL(videoBlob);
@@ -88,7 +85,7 @@ const Index = () => {
         setIsProcessing(false);
       }
     },
-    [useBoundingBox]
+    []
   );
 
   return (
@@ -105,17 +102,7 @@ const Index = () => {
       )}
 
       <main className="flex-1 p-4 lg:p-6 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Switch
-              id="bbox-toggle"
-              checked={useBoundingBox}
-              onCheckedChange={setUseBoundingBox}
-            />
-            <Label htmlFor="bbox-toggle" className="text-xs font-medium cursor-pointer">
-              Bounding Box
-            </Label>
-          </div>
+        <div className="flex flex-wrap items-center justify-end gap-3">
           <div className="text-xs text-muted-foreground font-mono">
             {new Date().toLocaleDateString("id-ID", {
               weekday: "long",
