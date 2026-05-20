@@ -153,7 +153,7 @@ const EmergencyAlert = ({ fallEvents, cameraLabel, timestamp, onDismiss }: Emerg
               className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-md bg-destructive text-destructive-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
             >
               <Phone className="w-4 h-4" />
-              Telepon 119
+              Tangani
             </a>
             <button
               onClick={handleClose}
