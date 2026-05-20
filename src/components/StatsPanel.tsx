@@ -1,4 +1,4 @@
-import { Clock, AlertTriangle, Cpu, Film, Activity, PersonStanding, Timer, Layers } from "lucide-react";
+import { Clock, Cpu, Film, Activity, PersonStanding, Timer, Layers } from "lucide-react";
 import type { VideoStats } from "@/lib/api";
 
 interface StatsPanelProps {
@@ -53,13 +53,6 @@ const StatsPanel = ({ stats, modelName }: StatsPanelProps) => {
       value: modelName,
       sub: "Active model",
       color: "text-primary",
-    },
-    {
-      icon: AlertTriangle,
-      label: "Fall Events",
-      value: stats ? stats.total_fall_events.toString() : "—",
-      sub: "Total detected",
-      color: stats && stats.total_fall_events > 0 ? "text-destructive" : "text-success",
     },
     {
       icon: PersonStanding,
