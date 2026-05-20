@@ -55,13 +55,6 @@ const StatsPanel = ({ stats, modelName }: StatsPanelProps) => {
       color: "text-primary",
     },
     {
-      icon: AlertTriangle,
-      label: "Fall Events",
-      value: stats ? stats.total_fall_events.toString() : "—",
-      sub: "Total detected",
-      color: stats && stats.total_fall_events > 0 ? "text-destructive" : "text-success",
-    },
-    {
       icon: PersonStanding,
       label: "Max Simultaneous",
       value: stats ? stats.max_fall_count.toString() : "—",
