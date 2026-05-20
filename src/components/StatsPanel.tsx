@@ -1,4 +1,4 @@
-import { Clock, AlertTriangle, Cpu, Film, Activity, PersonStanding, Timer, Layers } from "lucide-react";
+import { Clock, Cpu, Film, Activity, PersonStanding, Timer, Layers } from "lucide-react";
 import type { VideoStats } from "@/lib/api";
 
 interface StatsPanelProps {
