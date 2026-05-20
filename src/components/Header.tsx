@@ -1,5 +1,6 @@
-import { Activity, Settings, Wifi, WifiOff, Home } from "lucide-react";
+import { Settings, Wifi, WifiOff, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import logo from "@/assets/favicon-logo.png";
 
 interface HeaderProps {
   apiConnected: boolean;
@@ -19,7 +20,7 @@ const Header = ({ apiConnected, onSettingsClick }: HeaderProps) => {
           <Home className="w-4 h-4" />
         </button>
         <div className="flex items-center gap-2">
-          <Activity className="w-5 h-5 text-primary" />
+          <img src={logo} alt="FallGuard logo" className="w-6 h-6 object-contain" />
           <h1 className="text-lg font-semibold tracking-tight">
             <span className="text-primary">Fall</span>
             <span className="text-foreground">Guard</span>
