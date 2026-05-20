@@ -1,5 +1,6 @@
-import { Activity, Settings, Wifi, WifiOff, Home } from "lucide-react";
+import { Settings, Wifi, WifiOff, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import logo from "@/assets/favicon-logo.png";
 
 interface HeaderProps {
   apiConnected: boolean;
