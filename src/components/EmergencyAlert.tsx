@@ -91,10 +91,6 @@ const EmergencyAlert = ({ fallEvents, cameraLabel, timestamp, onDismiss }: Emerg
                 })}
               </span>
             </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Jumlah Event</span>
-              <span className="font-bold text-destructive">{fallEvents} fall event{fallEvents > 1 ? "s" : ""}</span>
-            </div>
           </div>
 
           {/* Action Steps */}
