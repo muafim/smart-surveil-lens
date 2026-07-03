@@ -82,7 +82,7 @@ const CameraFeed = ({ id, label, onVideoUpload, isProcessing, resultVideoUrl, or
             key={activeUrl}
             src={activeUrl}
             controls
-            className="absolute inset-0 w-full h-full object-contain bg-black"
+            className="absolute inset-0 w-full h-full object-contain bg-muted/80"
           />
         ) : isProcessing ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
